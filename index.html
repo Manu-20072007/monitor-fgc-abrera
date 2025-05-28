@@ -1,0 +1,64 @@
+
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monitor FGC - Abrera</title>
+  <style>
+    body {
+      background-color: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 2em;
+      margin-bottom: 20px;
+    }
+    .tren {
+      background-color: #222;
+      margin: 10px auto;
+      padding: 15px;
+      border-radius: 10px;
+      max-width: 600px;
+      box-shadow: 0 0 10px rgba(255,255,255,0.1);
+    }
+  </style>
+</head>
+<body>
+  <h1>Estació d'Abrera</h1>
+  <div id="monitor"></div>
+
+  <script>
+    async function carregarTrens() {
+      try {
+        const resposta = await fetch('https://api.fgc.cat/trains?station_id=abrera');
+        const dades = await resposta.json();
+
+        const monitor = document.getElementById('monitor');
+        monitor.innerHTML = '';
+
+        dades.trains.forEach(tren => {
+          const trenDiv = document.createElement('div');
+          trenDiv.className = 'tren';
+          trenDiv.innerHTML = `
+            <strong>Línia:</strong> ${tren.line} <br>
+            <strong>Destí:</strong> ${tren.destination} <br>
+            <strong>Vía:</strong> ${tren.platform} <br>
+            <strong>Arribada en:</strong> ${tren.minutes} minuts
+          `;
+          monitor.appendChild(trenDiv);
+        });
+      } catch (error) {
+        document.getElementById('monitor').innerHTML = '<p>Error carregant les dades.</p>';
+        console.error('Error:', error);
+      }
+    }
+
+    carregarTrens();
+    setInterval(carregarTrens, 60000);
+  </script>
+</body>
+</html>
