@@ -1,64 +1,95 @@
 
 <!DOCTYPE html>
-<html lang="ca">
+<html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Monitor FGC - Abrera</title>
   <style>
     body {
-      background-color: #000;
-      color: #fff;
       font-family: Arial, sans-serif;
+      background-color: #111;
+      color: #fff;
       text-align: center;
       padding: 20px;
     }
     h1 {
-      font-size: 2em;
-      margin-bottom: 20px;
+      color: #00ffcc;
     }
-    .tren {
+    table {
+      margin: auto;
+      border-collapse: collapse;
+      width: 80%;
       background-color: #222;
-      margin: 10px auto;
-      padding: 15px;
-      border-radius: 10px;
-      max-width: 600px;
-      box-shadow: 0 0 10px rgba(255,255,255,0.1);
+    }
+    th, td {
+      border: 1px solid #444;
+      padding: 10px;
+    }
+    th {
+      background-color: #00ffcc;
+      color: #000;
+    }
+    .subida {
+      color: #00e6e6;
+    }
+    .bajada {
+      color: #ffa500;
     }
   </style>
 </head>
 <body>
-  <h1>Estació d'Abrera</h1>
-  <div id="monitor"></div>
+  <h1>Monitor FGC - Abrera</h1>
+  <p id="horaActual"></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Hora</th>
+        <th>Destino</th>
+        <th>Dirección</th>
+      </tr>
+    </thead>
+    <tbody id="tablaTrenes"></tbody>
+  </table>
 
   <script>
-    async function carregarTrens() {
-      try {
-        const resposta = await fetch('https://api.fgc.cat/trains?station_id=abrera');
-        const dades = await resposta.json();
+    async function cargarDatos() {
+      document.getElementById("horaActual").textContent =
+        "Hora actual: " + new Date().toLocaleTimeString();
 
-        const monitor = document.getElementById('monitor');
-        monitor.innerHTML = '';
+      const response = await fetch("https://dadesobertes.fgc.cat/api/explore/v2.1/catalog/datasets/viajes-de-hoy/records?limit=100&refine=estacion%3AAbrera");
+      const data = await response.json();
+      const trenes = data.results;
 
-        dades.trains.forEach(tren => {
-          const trenDiv = document.createElement('div');
-          trenDiv.className = 'tren';
-          trenDiv.innerHTML = `
-            <strong>Línia:</strong> ${tren.line} <br>
-            <strong>Destí:</strong> ${tren.destination} <br>
-            <strong>Vía:</strong> ${tren.platform} <br>
-            <strong>Arribada en:</strong> ${tren.minutes} minuts
-          `;
-          monitor.appendChild(trenDiv);
-        });
-      } catch (error) {
-        document.getElementById('monitor').innerHTML = '<p>Error carregant les dades.</p>';
-        console.error('Error:', error);
+      const subida = trenes
+        .filter(t => t.destino === "Barcelona-Pl. Espanya")
+        .sort((a, b) => a.hora_llegada.localeCompare(b.hora_llegada))
+        .slice(0, 2);
+
+      const bajada = trenes
+        .filter(t => t.destino === "Manresa" || t.destino === "Igualada")
+        .sort((a, b) => a.hora_llegada.localeCompare(b.hora_llegada))
+        .slice(0, 2);
+
+      const mostrar = [...subida.map(t => ({...t, direccion: "Subida"})), 
+                       ...bajada.map(t => ({...t, direccion: "Bajada"}))];
+
+      const tabla = document.getElementById("tablaTrenes");
+      tabla.innerHTML = "";
+
+      for (const tren of mostrar.sort((a, b) => a.hora_llegada.localeCompare(b.hora_llegada))) {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${tren.hora_llegada.slice(0, 5)}</td>
+          <td>${tren.destino}</td>
+          <td class="${tren.direccion.toLowerCase()}">${tren.direccion}</td>
+        `;
+        tabla.appendChild(row);
       }
     }
 
-    carregarTrens();
-    setInterval(carregarTrens, 60000);
+    cargarDatos();
+    setInterval(cargarDatos, 60000);
   </script>
 </body>
 </html>
