@@ -58,35 +58,40 @@
         "Hora actual: " + new Date().toLocaleTimeString();
 
       const originalUrl = "https://dadesobertes.fgc.cat/api/explore/v2.1/catalog/datasets/viajes-de-hoy/records?limit=100&refine=estacion%3AAbrera";
-const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(originalUrl);
-const response = await fetch(proxyUrl);
-      const data = await response.json();
-      const trenes = data.results;
+      const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(originalUrl);
 
-      const subida = trenes
-        .filter(t => t.destino === "Barcelona-Pl. Espanya")
-        .sort((a, b) => a.hora_llegada.localeCompare(b.hora_llegada))
-        .slice(0, 2);
+      try {
+        const response = await fetch(proxyUrl);
+        const data = await response.json();
+        const trenes = data.results;
 
-      const bajada = trenes
-        .filter(t => t.destino === "Manresa" || t.destino === "Igualada")
-        .sort((a, b) => a.hora_llegada.localeCompare(b.hora_llegada))
-        .slice(0, 2);
+        const subida = trenes
+          .filter(t => t.destino === "Barcelona-Pl. Espanya")
+          .sort((a, b) => a.hora_llegada.localeCompare(b.hora_llegada))
+          .slice(0, 2);
 
-      const mostrar = [...subida.map(t => ({...t, direccion: "Subida"})), 
-                       ...bajada.map(t => ({...t, direccion: "Bajada"}))];
+        const bajada = trenes
+          .filter(t => t.destino === "Manresa" || t.destino === "Igualada")
+          .sort((a, b) => a.hora_llegada.localeCompare(b.hora_llegada))
+          .slice(0, 2);
 
-      const tabla = document.getElementById("tablaTrenes");
-      tabla.innerHTML = "";
+        const mostrar = [...subida.map(t => ({...t, direccion: "Subida"})), 
+                         ...bajada.map(t => ({...t, direccion: "Bajada"}))];
 
-      for (const tren of mostrar.sort((a, b) => a.hora_llegada.localeCompare(b.hora_llegada))) {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${tren.hora_llegada.slice(0, 5)}</td>
-          <td>${tren.destino}</td>
-          <td class="${tren.direccion.toLowerCase()}">${tren.direccion}</td>
-        `;
-        tabla.appendChild(row);
+        const tabla = document.getElementById("tablaTrenes");
+        tabla.innerHTML = "";
+
+        for (const tren of mostrar.sort((a, b) => a.hora_llegada.localeCompare(b.hora_llegada))) {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${tren.hora_llegada.slice(0, 5)}</td>
+            <td>${tren.destino}</td>
+            <td class="${tren.direccion.toLowerCase()}">${tren.direccion}</td>
+          `;
+          tabla.appendChild(row);
+        }
+      } catch (error) {
+        document.getElementById("tablaTrenes").innerHTML = "<tr><td colspan='3'>Error al cargar datos.</td></tr>";
       }
     }
 
